@@ -1,0 +1,173 @@
+version: "3.7"
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 5672:5672
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
+
+  consul:
+    image: consul:1.6
+    ports:
+      - 8300:8300
+      - 8500:8500
+      - 8600:8600
+    command: agent -server -bind 0.0.0.0 -client 0.0.0.0 -bootstrap-expect=1 -ui
+
+  confd-db:
+    image: wazopbx/wazo-confd-db
+    ports:
+      - 5432
+
+  dird-db:
+    image: wazopbx/wazo-dird-db
+    ports:
+      - 5432
+
+  auth-db:
+    image: wazopbx/wazo-auth-db
+    ports:
+      - 5432
+      
+  webhookd-db:
+    build: 
+      context: https://github.com/wazo-platform/wazo-webhookd.git
+      dockerfile: ./contribs/docker/Dockerfile-db
+    image: wazo-webhookd-db
+    ports:
+      - 5432
+      
+  auth:
+    image: wazopbx/wazo-auth
+    environment:
+      XIVO_UUID: asjdasdgajshdg-asdasd-asd-asd
+    ports:
+      - 9497:9497
+    volumes:
+      - ./etc/wazo-auth/conf.d/50-default.yml:/etc/wazo-auth/conf.d/50-default.yml
+      - ./etc/40-default.yml:/etc/wazo-auth/conf.d/40-default.yml
+
+  sysconfd:
+    build: https://github.com/wazo-platform/xivo-sysconfd.git
+    image: wazo-sysconfd
+    ports:
+      - 8668:8668
+    volumes:
+      - ./etc/xivo/sysconfd.conf:/etc/xivo/sysconfd.conf
+
+  provd:
+    image: wazopbx/wazo-provd
+    ports:
+      - 8666:8666
+    volumes:
+      - ./etc/40-default.yml:/etc/wazo-provd/conf.d/40-default.yml
+      - ./keys/wazo-provd-key.yml:/var/lib/wazo-auth-keys/wazo-provd-key.yml
+
+  confd:
+    image: wazopbx/wazo-confd
+    environment:
+      XIVO_UUID: asjdasdgajshdg-asdasd-asd-asvvas
+    ports:
+      - 9486:9486
+    volumes:
+      - ./etc/40-default.yml:/etc/wazo-confd/conf.d/40-default.yml
+      - ./etc/wazo-confd/conf.d/50-default.yml:/etc/wazo-confd/conf.d/50-default.yml
+      - ./keys/wazo-confd-key.yml:/var/lib/wazo-auth-keys/wazo-confd-key.yml
+      - ./doc/pjsip.json.gz:/usr/share/doc/asterisk-doc/json/pjsip.json.gz
+
+  dird:
+    image: wazopbx/wazo-dird
+    environment:
+      XIVO_UUID: asjdasdgajshdg-asdasd-asd-asvvaass
+    ports:
+      - 9489:9489
+    volumes:
+      - ./etc/wazo-dird/conf.d/50-default.yml:/etc/wazo-dird/conf.d/50-default.yml
+  
+  phoned:
+    image: wazopbx/wazo-phoned
+    ports:
+      - 9498:9498
+    volumes:
+      - ./keys/wazo-phoned-key.yml:/var/lib/wazo-auth-keys/wazo-phoned-key.yml
+      - ./etc/40-default.yml:/etc/wazo-provd/conf.d/40-default.yml
+      - ./etc/wazo-phoned/conf.d/50-default.yml:/etc/wazo-phoned/conf.d/50-default.yml
+  
+  calld:
+    image: wazopbx/wazo-calld
+    volumes:
+      - ./keys/wazo-calld-key.yml:/var/lib/wazo-auth-keys/wazo-calld-key.yml
+      - ./etc/40-default.yml:/etc/wazo-calld/conf.d/40-default.yml
+    ports:
+      - 9500
+    environment:
+      XIVO_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b92
+  
+  webhookd:
+    build: https://github.com/wazo-platform/wazo-webhookd.git
+    image: wazo-webhookd
+    environment:
+      XIVO_UUID: cd030e68-ace9-4ad4-bc4e-13c8dec67898
+    volumes:
+      - ./etc/40-default.yml:/etc/wazo-webhookd/conf.d/40-default.yml
+      - ./etc/wazo-webhookd/conf.d/50-default-config.yml:/etc/wazo-webhookd/conf.d/50-default-config.yml
+      - ./keys/wazo-webhookd-key.yml:/var/lib/wazo-auth-keys/wazo-webhookd-key.yml
+    ports:
+      - 9300:9300
+
+  agentd:
+    image: wazopbx/wazo-agentd
+    environment:
+      XIVO_UUID: 00000000-0000-0000-0000-0000000c4a7d
+    entrypoint: /agentd.sh
+    volumes:
+      - ./entrypoint/agentd.sh:/agentd.sh
+      - ./etc/wazo-agentd/conf.d/50-default.yml:/etc/wazo-agentd/conf.d/50-default.yml
+      - ./keys/wazo-agentd-key.yml:/var/lib/wazo-auth-keys/wazo-agentd-key.yml
+    ports:
+      - 9493:9493
+
+  call-logd:
+    image: wazopbx/wazo-call-logd
+    volumes:
+      - ./etc/40-default.yml:/etc/wazo-webhookd/conf.d/40-default.yml
+      - ./keys/wazo-call-logd-key.yml:/var/lib/wazo-auth-keys/wazo-call-logd-key.yml
+      - ./etc/wazo-call-logd/conf.d/50-default.yml:/etc/wazo-call-logd/conf.d/50-default.yml
+    ports:
+      - 9298:9298
+    environment:
+      XIVO_UUID: 08c56466-8f29-45c7-9856-92bf1ba89b92
+  
+  websocketd:
+    image: wazopbx/wazo-websocketd
+    volumes:
+      - ./etc/wazo-websocketd/conf.d/50-default.yml:/etc/wazo-websocketd/conf.d/50-default.yml
+    ports:
+      - 9502:9502
+  
+  setupd:
+    build: https://github.com/wazo-platform/wazo-setupd.git
+    image: wazopbx/wazo-setupd
+    environment:
+      XIVO_UUID: cd030e68-ace9-4ad4-bc4e-13c8dec67898
+    volumes:
+      - ./etc/40-default.yml:/etc/wazo-webhookd/conf.d/40-default.yml
+    ports:
+      - 9302:9302
+
+  asterisk:
+    image: wazopbx/asterisk
+    ports:
+      - 5039
+    volumes:
+      - ./etc/asterisk:/etc/asterisk
+
+  amid:
+    image: wazopbx/wazo-amid
+    volumes:
+      - ./etc/wazo-amid/conf.d/050-wazo-uuid.yml:/etc/wazo-amid/conf.d/050-wazo-uuid.yml
+    ports:
+      - 9491:9491
+  

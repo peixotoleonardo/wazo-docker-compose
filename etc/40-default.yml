@@ -1,0 +1,31 @@
+rest_api:
+  listen: 0.0.0.0
+
+auth:
+  host: auth
+
+amqp:
+  uri: amqp://guest:guest@rabbitmq:5672/
+
+ari:
+  host: ari
+
+bus:
+  host: rabbitmq
+  
+provd:
+  host: provd
+
+confd:
+  host: confd
+
+dird:
+  host: dird
+
+consul:
+  host: consul
+
+ajam:
+  host: asterisk
+
+publish_ami_events: true

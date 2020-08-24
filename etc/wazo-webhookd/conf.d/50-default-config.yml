@@ -1,0 +1,7 @@
+bus:
+  host: rabbitmq
+
+celery:
+  broker: amqp://guest:guest@rabbitmq:5672
+
+db_uri: postgresql://asterisk:proformatique@webhookd-db/asterisk
